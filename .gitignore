@@ -1,0 +1,5 @@
+﻿credentials.json
+token.json
+.venv/
+output.txt
+__pycache__/
