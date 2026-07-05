@@ -267,6 +267,7 @@ dependencies = [
     { name = "google-api-python-client" },
     { name = "google-auth-httplib2" },
     { name = "google-auth-oauthlib" },
+    { name = "requests" },
 ]
 
 [package.metadata]
@@ -274,6 +275,7 @@ requires-dist = [
     { name = "google-api-python-client" },
     { name = "google-auth-httplib2" },
     { name = "google-auth-oauthlib" },
+    { name = "requests" },
 ]
 
 [[package]]
