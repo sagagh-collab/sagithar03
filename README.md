@@ -1,91 +1,87 @@
-# Gmail & Calendar AI Agent
+# סוכן AI ל-Gmail ו-Calendar
 
-**L08 Bonus Assignment — Group code: `sagithar03`**
+**מטלת בונוס L08 — קוד קבוצה: `sagithar03`**
 
-An AI agent that scans a Gmail inbox for free-text meeting requests, uses the
-Gemini LLM to understand and extract meeting details, checks Google Calendar
-availability, and either books the meeting or replies that the time doesn't
-work.
+סוכן בינה מלאכותית שסורק תיבת Gmail בחיפוש אחר בקשות חופשיות (בטקסט חופשי) לקביעת
+פגישות, משתמש במודל השפה Gemini כדי להבין ולחלץ את פרטי הפגישה, בודק זמינות
+ב-Google Calendar, ולבסוף או קובע את הפגישה או משיב שהמועד המבוקש אינו זמין.
 
-See [`PRD.md`](./PRD.md) for full requirements, [`PLAN.md`](./PLAN.md) for the
-development plan, and [`TODO.md`](./TODO.md) for task tracking.
+לפרטים המלאים ראו [`PRD.md`](./PRD.md) (מסמך דרישות), [`PLAN.md`](./PLAN.md)
+(תוכנית הפיתוח), ו-[`TODO.md`](./TODO.md) (מעקב משימות).
 
-## How it works
+## איך זה עובד
 
-1. Authenticates with Google via OAuth 2.0 (Gmail + Calendar scopes).
-2. Reads inbox messages from the last 48 hours (configurable).
-3. Skips formal calendar-invite emails — only free-text requests are handled.
-4. Sends each remaining email to Gemini (`gemini-2.5-flash`) to classify
-   whether it's a genuine meeting request and, if so, extract date, time,
-   duration, participants, and location.
-5. Checks Calendar free/busy for the extracted slot.
-6. **Free** → creates a Calendar event with full details.
-   **Busy** → replies to the sender explaining the slot is taken.
+1. מתחברת ל-Google באמצעות OAuth 2.0 (הרשאות Gmail + Calendar).
+2. קוראת הודעות מתיבת הדואר הנכנס מה-48 השעות האחרונות (ניתן להגדרה).
+3. מדלגת על מיילים שהם הזמנות פורמליות ליומן (`.ics`) - רק בקשות בטקסט חופשי
+   מטופלות.
+4. שולחת כל מייל שנותר ל-Gemini (`gemini-2.5-flash`) כדי לסווג האם זו בקשה
+   אמיתית לפגישה, ואם כן - לחלץ תאריך, שעה, משך, משתתפים, ומקום.
+5. בודקת זמינות ביומן (Free/Busy) עבור פרק הזמן שחולץ.
+6. **פנוי** ← יוצרת אירוע ביומן עם כל הפרטים.
+   **תפוס** ← משיבה לשולח שהמועד תפוס.
 
-## Setup
+## התקנה
 
-### 1. Prerequisites
-- Python 3.10+
-- [`uv`](https://astral.sh/uv) package manager
-- A Google account (Gmail + Calendar)
-- A free Gemini API key ([Google AI Studio](https://aistudio.google.com))
+### 1. דרישות מקדימות
+- Python 3.10 ומעלה
+- מנהל החבילות [`uv`](https://astral.sh/uv)
+- חשבון Google (Gmail + Calendar)
+- מפתח Gemini API חינמי ([Google AI Studio](https://aistudio.google.com))
 
-### 2. Google Cloud / OAuth setup
-Full step-by-step instructions are in the course-provided setup guide
-(Appendix A). Summary:
-1. Create a Google Cloud project.
-2. Enable **Gmail API** and **Google Calendar API**.
-3. Configure the OAuth consent screen (External audience).
-4. Add scopes: `gmail.modify`, `calendar`.
-5. Create an OAuth Client of type **Desktop app**, download it, and save it
-   as `credentials.json` in this folder.
-6. Add your own email as a Test User (required while the app is in Testing
-   mode).
+### 2. הגדרת Google Cloud / OAuth
+הוראות מלאות שלב-אחר-שלב מופיעות במדריך שסופק בקורס (נספח א'). בקצרה:
+1. יצירת פרויקט ב-Google Cloud.
+2. הפעלת **Gmail API** ו-**Google Calendar API**.
+3. הגדרת מסך הסכמת ה-OAuth (קהל יעד External).
+4. הוספת ההרשאות (scopes): `gmail.modify`, `calendar`.
+5. יצירת OAuth Client מסוג **Desktop app**, הורדתו, ושמירתו בשם `credentials.json`
+   בתיקייה זו.
+6. הוספת כתובת המייל שלך כ-Test User (נדרש כל עוד האפליקציה במצב Testing).
 
-### 3. Gemini API key
-1. Go to [aistudio.google.com](https://aistudio.google.com).
-2. Create an API key (free tier, no credit card required).
-3. Create a file named `.env` in this folder with:
+### 3. מפתח Gemini API
+1. כניסה ל-[aistudio.google.com](https://aistudio.google.com).
+2. יצירת מפתח API (שכבה חינמית, ללא צורך בכרטיס אשראי).
+3. יצירת קובץ בשם `.env` בתיקייה זו עם השורה:
    ```
-   GEMINI_API_KEY=your_key_here
+   GEMINI_API_KEY=המפתח_שלך_כאן
    ```
 
-### 4. Install dependencies
+### 4. התקנת תלויות
 ```bash
 uv sync
 ```
 
-### 5. Run
+### 5. הרצה
 ```bash
 uv run main.py
 ```
 
-On first run, a browser window opens for Google sign-in and consent. A
-`token.json` file is created and reused on subsequent runs (no repeated
-sign-in needed unless it expires or scopes change).
+בהרצה הראשונה ייפתח חלון דפדפן להתחברות ואישור הרשאות מול Google. נוצר קובץ
+`token.json` שישמש בהרצות הבאות (אין צורך בהתחברות חוזרת, אלא אם התוקף פג או
+שההרשאות משתנות).
 
-## Configuration
+## הגדרות ניתנות לשינוי
 
-Edit the constants at the top of `main.py`:
+ניתן לערוך את הקבועים בראש הקובץ `main.py`:
 
-| Constant | Default | Description |
+| קבוע | ברירת מחדל | תיאור |
 |---|---|---|
-| `LOOKBACK_HOURS` | `48` | How many hours back to scan the inbox |
-| `GEMINI_MODEL` | `gemini-2.5-flash` | Which Gemini model to use |
-| `DEFAULT_MEETING_DURATION_MINUTES` | `60` | Used when the email doesn't specify a duration |
+| `LOOKBACK_HOURS` | `48` | כמה שעות אחורה לסרוק בתיבת הדואר |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | איזה מודל Gemini לשימוש |
+| `DEFAULT_MEETING_DURATION_MINUTES` | `60` | משך ברירת מחדל כשלא מצוין במייל |
 
-## Security notes
+## הערות אבטחה
 
-The following files contain secrets and are **excluded from this repository**
-via `.gitignore`:
-- `credentials.json` — OAuth client secret
-- `token.json` — personal access/refresh token
-- `.env` — Gemini API key
+הקבצים הבאים מכילים מידע רגיש ו**מוחרגים מהריפו** באמצעות `.gitignore`:
+- `credentials.json` — סוד ה-OAuth Client
+- `token.json` — טוקן הגישה/ריענון האישי
+- `.env` — מפתח ה-Gemini API
 
-To run this project yourself, you must generate your own copies of these
-files following the setup steps above.
+כדי להריץ את הפרויקט בעצמכם, יש ליצור עותקים אישיים של קבצים אלה לפי השלבים
+לעיל.
 
-## Example run
+## דוגמת הרצה
 
 ```
 Found 8 email(s) from the last 48 hours.
@@ -99,13 +95,11 @@ Found 8 email(s) from the last 48 hours.
 [skip] 'Mejora tu experiencia móvil...' - not a meeting request
 ```
 
-Out of 8 real inbox emails (in Hebrew, English, and Spanish), the agent
-correctly identified 2 genuine meeting requests and booked them, while
-correctly skipping newsletters, receipts, and unrelated correspondence.
+מתוך 8 מיילים אמיתיים בתיבת הדואר (בעברית, אנגלית וספרדית), הסוכן זיהה נכון 2
+בקשות אמיתיות לפגישה וקבע אותן, תוך דילוג נכון על ניוזלטרים, חשבוניות,
+והתכתבויות לא רלוונטיות.
 
-## Screenshots
-
-
+## צילומי מסך
 
 <img width="1436" height="1165" alt="collage_1_cloud_setup" src="https://github.com/user-attachments/assets/e56ed22c-308c-429b-8bbc-e058185a9388" />
 
@@ -117,22 +111,16 @@ correctly skipping newsletters, receipts, and unrelated correspondence.
 
 <img width="924" height="260" alt="collage_4_calendar_results" src="https://github.com/user-attachments/assets/1cf2da61-09e2-4f6d-8e09-25eb3edab35d" />
 
-
-
-
-
-
-
-## Project structure
+## מבנה הפרויקט
 
 ```
 .
-├── main.py            # the agent
-├── pyproject.toml      # dependencies
-├── uv.lock             # locked dependency versions
-├── PRD.md               # product requirements document
-├── PLAN.md              # development plan
-├── TODO.md              # task tracker
-├── README.md            # this file
-└── .gitignore           # excludes credentials.json, token.json, .env, etc.
+├── main.py            # הסוכן
+├── pyproject.toml      # תלויות
+├── uv.lock             # גרסאות תלויות נעולות
+├── PRD.md               # מסמך דרישות המוצר
+├── PLAN.md              # תוכנית הפיתוח
+├── TODO.md              # מעקב משימות
+├── README.md            # קובץ זה
+└── .gitignore           # מחריג credentials.json, token.json, .env וכו'
 ```
