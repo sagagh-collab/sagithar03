@@ -105,8 +105,23 @@ correctly skipping newsletters, receipts, and unrelated correspondence.
 
 ## Screenshots
 
-_Add screenshots here: Google Cloud Console setup, connectivity test output,
-full agent run output, and the resulting Calendar events._
+
+
+<img width="1436" height="1165" alt="collage_1_cloud_setup" src="https://github.com/user-attachments/assets/e56ed22c-308c-429b-8bbc-e058185a9388" />
+
+<img width="1436" height="692" alt="collage_5_client_token" src="https://github.com/user-attachments/assets/b9d1b56d-ca3e-46af-98ab-741e598f5362" />
+
+<img width="1436" height="771" alt="collage_2_connectivity_test" src="https://github.com/user-attachments/assets/a0ad31ca-29b2-4881-a931-8ee3dc87907b" />
+
+<img width="1224" height="442" alt="collage_3_agent_run" src="https://github.com/user-attachments/assets/eedf9e64-1257-46ee-ad83-554c48d5232e" />
+
+<img width="924" height="260" alt="collage_4_calendar_results" src="https://github.com/user-attachments/assets/1cf2da61-09e2-4f6d-8e09-25eb3edab35d" />
+
+
+
+
+
+
 
 ## Project structure
 
