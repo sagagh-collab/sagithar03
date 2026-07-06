@@ -20,7 +20,9 @@ import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from email.header import Header
 from email.mime.text import MIMEText
+from email.utils import formataddr, parseaddr
 from pathlib import Path
 from typing import Optional
 
@@ -160,9 +162,10 @@ def list_recent_emails(gmail_service, hours: int) -> list[EmailMessage]:
 
 
 def send_reply(gmail_service, original: EmailMessage, reply_text: str) -> str:
-    msg = MIMEText(reply_text)
-    msg["To"] = original.sender
-    msg["Subject"] = f"Re: {original.subject}"
+    msg = MIMEText(reply_text, _charset="utf-8")
+    name, addr = parseaddr(original.sender)
+    msg["To"] = formataddr((str(Header(name, "utf-8")), addr)) if name else addr
+    msg["Subject"] = str(Header(f"Re: {original.subject}", "utf-8"))
     if original.message_id_header:
         msg["In-Reply-To"] = original.message_id_header
         msg["References"] = original.message_id_header
@@ -254,6 +257,10 @@ Rules:
 
 def extract_meeting_info(email: EmailMessage, api_key: str) -> MeetingExtraction:
     raw = call_gemini(build_extraction_prompt(email), api_key)
+    print(f"\n=== DEBUG: {email.subject!r} מאת {email.sender!r} ===")
+    print(f"--- טקסט המייל המקורי ---\n{email.body_text[:500]}")
+    print(f"--- תשובת Gemini הגולמית ---\n{raw}")
+    print("=== סוף DEBUG ===\n")
     raw = raw.strip()
     if raw.startswith("```"):
         raw = re.sub(r"^```(json)?|```$", "", raw.strip(), flags=re.MULTILINE).strip()
@@ -274,15 +281,24 @@ def extract_meeting_info(email: EmailMessage, api_key: str) -> MeetingExtraction
 # Calendar helpers
 # ---------------------------------------------------------------------------
 
+def list_calendar_ids(calendar_service) -> list[str]:
+    """Returns IDs of all calendars the user has access to (primary + shared/family/etc.)."""
+    calendars = calendar_service.calendarList().list().execute()
+    return [cal["id"] for cal in calendars.get("items", [])]
+
+
 def is_slot_free(calendar_service, start: datetime, end: datetime) -> bool:
+    calendar_ids = list_calendar_ids(calendar_service)
     body = {
         "timeMin": start.isoformat(),
         "timeMax": end.isoformat(),
-        "items": [{"id": "primary"}],
+        "items": [{"id": cal_id} for cal_id in calendar_ids],
     }
     result = calendar_service.freebusy().query(body=body).execute()
-    busy_slots = result["calendars"]["primary"]["busy"]
-    return len(busy_slots) == 0
+    for cal_id, cal_data in result.get("calendars", {}).items():
+        if cal_data.get("busy"):
+            return False
+    return True
 
 
 def create_meeting_event(calendar_service, extraction: MeetingExtraction,
@@ -372,7 +388,10 @@ def main():
     print(f"Found {len(emails)} email(s) from the last {LOOKBACK_HOURS} hours.\n")
 
     for email in emails:
-        process_email(gmail_service, calendar_service, email, api_key)
+        try:
+            process_email(gmail_service, calendar_service, email, api_key)
+        except Exception as exc:
+            print(f"[error] {email.subject!r} מאת {email.sender!r} - נכשל: {exc}")
         time.sleep(4)  # small pause between emails to stay under free-tier rate limits
 
 
