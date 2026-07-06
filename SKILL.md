@@ -30,7 +30,7 @@ Once per email that:
 |---|---|
 | `list_recent_emails` (Gmail API) | Read inbox messages from a time window |
 | `call_gemini` (Gemini API) | Run the skill's prompt against an LLM and get a structured JSON response |
-| `is_slot_free` (Calendar API — freebusy) | Check whether a given time range is free |
+| `is_slot_free` (Calendar API — freebusy) | Check whether a given time range is free, across **all** of the user's calendars (not just the primary one) |
 | `create_meeting_event` (Calendar API — events.insert) | Book the meeting |
 | `send_reply` (Gmail API — messages.send) | Reply to the sender if the slot is unavailable |
 
@@ -114,8 +114,39 @@ structured output, and acting on the result).
 
 ## Evaluation
 
-Tested against 8 real inbox emails (Hebrew, English, Spanish): 2 correctly
+Initial test: 8 real inbox emails (Hebrew, English, Spanish) — 2 correctly
 classified as genuine meeting requests (and booked), 6 correctly classified
 as non-meeting emails (newsletters, receipts, unrelated correspondence) —
 see the "Example run" section in [`README.md`](./README.md) for the full
 output and screenshots.
+
+Expanded test (July 2026): 12 real inbox emails, mixing genuine meeting
+requests, calendar notifications, formal invites, and marketing email.
+This round surfaced three real bugs in the orchestration code (not the
+prompt), all since fixed in `main.py`:
+
+- **Header encoding crash** — replying to senders with a non-ASCII (Hebrew)
+  display name raised `Invalid To header` and crashed the whole run,
+  silently leaving remaining emails unprocessed.
+- **Single-calendar conflict check** — availability was only checked
+  against the `primary` calendar, so events on secondary calendars (e.g. a
+  shared "family" calendar) were invisible to the conflict check.
+- **No per-email error isolation** — one failing email (API error, bad
+  data) would stop the entire batch instead of being logged and skipped.
+
+## Known limitations
+
+- **LLM non-determinism:** the same email body, run through the skill on
+  different occasions, has been observed to receive different
+  `is_meeting_request` classifications (true vs. false) for genuinely
+  ambiguous phrasing (e.g. "קבענו פגישה מחר בשעה 15:00" — is this a new
+  request or confirmation of an existing one?). This is inherent to
+  LLM-based classification at `temperature=0.2` and is not a code defect;
+  lowering temperature or adding few-shot examples to the prompt would
+  reduce but not eliminate it.
+- **Free-tier rate limits:** the Gemini free tier enforces a daily request
+  quota (as low as 20 requests/day for `gemini-2.5-flash` at time of
+  writing). Scanning even a modest inbox can exhaust it mid-run; the
+  agent will retry with backoff and then log an `[error]` and move on
+  rather than crash, but affected emails are simply never classified
+  that day.
