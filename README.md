@@ -115,6 +115,18 @@ correctly skipping newsletters, receipts, and unrelated correspondence.
 
 <img width="924" height="260" alt="collage_4_calendar_results" src="https://github.com/user-attachments/assets/1cf2da61-09e2-4f6d-8e09-25eb3edab35d" />
 
+### Debugging session (July 2026)
+
+Follow-up testing against a live inbox surfaced and fixed three real bugs
+(Hebrew header encoding, single-calendar conflict checks, crash resilience) —
+see [`SKILL.md`](./SKILL.md#known-limitations) for details.
+
+![Investigating the recurring calendar task](./screenshots/collage_1_recurring_task.png)
+
+![Debugging the agent code](./screenshots/collage_2_debugging_code.png)
+
+![Test run results & fixes](./screenshots/collage_3_test_results.png)
+
 ## Project structure
 
 ```
